@@ -14,3 +14,29 @@ mac & Linux: source venv/bin/activate
 
 # install flasks
 python3 -m pip install flask
+
+
+
+
+
+----- New Project ---------
+# initialize the Repo
+git init
+
+# create local snapshot
+git add .
+git commit -m "Somethig"
+
+# setup the remote url
+git remote add origin <URL>
+
+# upload to server
+git push -u origin main
+
+
+----- Subsequent push ------
+
+git add .
+git commit -m  "Something"
+
+git push
