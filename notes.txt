@@ -3,18 +3,17 @@
 python3 -m venv venv
 
 
-
 # activate the venv
-
 win: venv\Scripts\activate
-
 mac & Linux: source venv/bin/activate
-
 
 
 # install flasks
 python3 -m pip install flask
 
+
+# run the server (venv MUST BE ACTIVE)
+python3 server.py
 
 
 
