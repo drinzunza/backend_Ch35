@@ -61,5 +61,48 @@ def products_count():
     return json.dumps(count)
 
 
+
+
+# get /api/products/total
+# return the sum of all prices in the catalog
+@app.get("/api/products/total")
+def sum_prices():
+    total = 0
+    for product in mock_data:
+        price = product["price"]
+        total =  total + price
+
+    print(total) # show the result on the terminal
+    return json.dumps(total)
+
+
+
+@app.get("/api/categories")
+def categories():
+    cats = []
+    for prod in mock_data:
+        category = prod["category"]
+
+        # if category does not exist inside the list
+        if category not in cats:
+            cats.append(category)
+
+    return json.dumps(cats)
+
+
+
+
+@app.get("/api/catalog/<category>")
+def products_by_category(category):
+    results = []
+    for prod in mock_data:
+        if prod["category"].lower() == category.lower():
+            results.append(prod)
+
+    return json.dumps(results)
+
+
+
+
 # start the server
 app.run(debug=True)

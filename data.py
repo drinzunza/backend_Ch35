@@ -3,10 +3,10 @@
 mock_data = [
     {
         "_id": "1",
-        "price": 12.32,
         "title": "Cabbage",
         "image": "img-1.jpg",
         "category": "Vegetable",
+        "price": 12.32,
       },
       {
         "_id": "2123sxw12312",
