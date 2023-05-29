@@ -1,9 +1,11 @@
-from flask import Flask
+from flask import Flask, request, abort
 import json
 from about import me
-from data import mock_data
+from config import db
+from flask_cors import CORS
 
 app = Flask(__name__) # create a instance of Flask class
+CORS(app) # WARNING: disable CORS check
 
 ###################################################
 ##### WEB SERVER ##########
@@ -48,18 +50,38 @@ def dev_name():
     # return json.dumps(f"{me["name"]} {me["last_name"]} -- {me["email"]}")
 
 
+
+def fix_id(record):
+    record["_id"] = str(record["_id"])
+    return record
+
+
+
 @app.get("/api/catalog")
 def get_catalog():
-    return json.dumps(mock_data)
+    cursor = db.products.find({})
+    results = []
+    for prod in cursor:
+        results.append(fix_id(prod))
+
+    return json.dumps(results)
+
+
+@app.post('/api/catalog')
+def save_product():
+    product = request.get_json() # get the json payload from the request
+    # save product to DB
+    db.products.insert_one(product)
+
+    return json.dumps(fix_id(product))
 
 
 # get /api/products/count
 # return the number of products in the catalog
 @app.get("/api/products/count")
 def products_count():
-    count = len(mock_data)
+    count = db.products.count_documents({})
     return json.dumps(count)
-
 
 
 
@@ -67,8 +89,9 @@ def products_count():
 # return the sum of all prices in the catalog
 @app.get("/api/products/total")
 def sum_prices():
+    cursor = db.products.find({})
     total = 0
-    for product in mock_data:
+    for product in cursor:
         price = product["price"]
         total =  total + price
 
@@ -79,8 +102,9 @@ def sum_prices():
 
 @app.get("/api/categories")
 def categories():
+    cursor = db.products.find({})
     cats = []
-    for prod in mock_data:
+    for prod in cursor:
         category = prod["category"]
 
         # if category does not exist inside the list
@@ -94,53 +118,89 @@ def categories():
 
 @app.get("/api/catalog/<category>")
 def products_by_category(category):
+    cursor = db.products.find({"category": category})   
     results = []
-    for prod in mock_data:
-        if prod["category"].lower() == category.lower():
-            results.append(prod)
+    for prod in cursor:
+        results.append(fix_id(prod))
 
     return json.dumps(results)
 
 
-
-# should return all the produces whose price is lower than price var
 @app.get("/api/products/lower/<price>")
 def products_lower_price(price):
     fixed_price = float(price)
+    cursor = db.products.find({})
     results = []
-    for prod in mock_data:
+    for prod in cursor:
         if prod["price"] < fixed_price:
-            results.append(prod)
+            results.append(fix_id(prod))
 
     return json.dumps(results)
 
 
-
-# /api/products/greater/<price>
-# prices greater OR EQUAL
 @app.get("/api/products/greater/<price>")
 def products_greater_price(price):
     fixed_price = float(price)
+    cursor = db.products.find({})
     results = []
-    for prod in mock_data:
+    for prod in cursor:
         if prod["price"] >= fixed_price:
-            results.append(prod)
+            results.append(fix_id(prod))
 
     return json.dumps(results)
 
 
-
-# /api/products/search/<term>
-# search must be case insensitive
 @app.get('/api/products/search/<term>')
 def search_products(term):
+    # search on database all products whose title contains the value of term (case insensitive)
+    cursor = db.products.find({"title": { '$regex': term, "$options": "i" }})
     results = []
-    for prod in mock_data:
-        if term.lower() in prod["title"].lower():
-            results.append(prod)
+    for prod in cursor:
+        results.append(fix_id(prod))
 
     return json.dumps(results)
 
+
+
+
+
+
+
+
+
+
+################################################
+########### COUPON CODES  ######################
+################################################ 
+
+@app.post("/api/coupons")
+def save_coupon():
+    coupon = request.get_json()
+    db.coupons.insert_one(coupon)
+
+    return json.dumps(fix_id(coupon))
+
+
+
+@app.get("/api/coupons")
+def get_coupons():
+    cursor = db.coupons.find({})
+    results = []
+    for coupon in cursor:
+        results.append(fix_id(coupon))
+
+    return json.dumps(results)
+
+
+# get /api/coupons/<code>
+# return the coupon with the given code
+@app.get("/api/coupons/<code>")
+def get_coupon_by_code(code):
+    coupon = db.coupons.find_one({"code": code})
+    if coupon == None:
+        return abort(404, "Invalid coupon code")
+    
+    return json.dumps(fix_id(coupon))
 
 
 # start the server
